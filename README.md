@@ -15,7 +15,7 @@ A comprehensive financial analytics tool designed to track and analyze potential
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/ai-bubble-dashboard.git
+git clone https://github.com/aca98aca/ai-bubble-dashboard.git
 cd ai-bubble-dashboard
 ```
 
