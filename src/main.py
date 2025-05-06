@@ -1,66 +1,47 @@
-import os
-import sys
+"""
+Main entry point for the AI Bubble Dashboard.
+"""
+
 import argparse
-from src.data_collection.service import start_service, stop_service
-from src.visualization.dashboard import app
+import logging
+from src.visualization.dashboard import run_dashboard
 from src.utils.config import PATHS
 from src.utils.helpers import ensure_directory, logger
 
-def setup_environment():
-    """Set up the application environment."""
-    # Create necessary directories
-    for directory in [PATHS['data_dir'], PATHS['config_dir']]:
-        ensure_directory(directory)
-    
-    # Check for required environment variables
-    required_vars = ['FMP_API_KEY', 'SEC_API_KEY']
-    missing_vars = [var for var in required_vars if not os.getenv(var)]
-    
-    if missing_vars:
-        logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
-        sys.exit(1)
-
-def parse_arguments():
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='AI Bubble Dashboard')
-    parser.add_argument('--mode', choices=['dashboard', 'service', 'both'],
-                      default='both', help='Run mode: dashboard, service, or both')
-    parser.add_argument('--port', type=int, default=8050,
-                      help='Port for the dashboard (default: 8050)')
-    parser.add_argument('--debug', action='store_true',
-                      help='Enable debug mode')
-    return parser.parse_args()
+def setup_logging():
+    """Set up logging configuration."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(PATHS['logs'] / 'app.log')
+        ]
+    )
 
 def main():
     """Main entry point for the application."""
-    args = parse_arguments()
-    setup_environment()
+    parser = argparse.ArgumentParser(description='AI Bubble Dashboard')
+    parser.add_argument('--mode', choices=['dashboard'], default='dashboard',
+                      help='Application mode (default: dashboard)')
+    parser.add_argument('--debug', action='store_true',
+                      help='Run in debug mode')
+    parser.add_argument('--port', type=int, default=8050,
+                      help='Port to run the dashboard on (default: 8050)')
     
-    try:
-        if args.mode in ['service', 'both']:
-            logger.info("Starting data collection service...")
-            start_service()
-        
-        if args.mode in ['dashboard', 'both']:
-            logger.info(f"Starting dashboard on port {args.port}...")
-            app.run_server(debug=args.debug, port=args.port)
-        
-        if args.mode == 'both':
-            # Keep the main thread alive
-            while True:
-                try:
-                    input()
-                except KeyboardInterrupt:
-                    break
+    args = parser.parse_args()
     
-    except KeyboardInterrupt:
-        logger.info("Shutting down...")
-    except Exception as e:
-        logger.error(f"Error in main: {e}")
-    finally:
-        if args.mode in ['service', 'both']:
-            stop_service()
-        logger.info("Application stopped")
+    # Set up logging
+    setup_logging()
+    logger.info("Starting AI Bubble Dashboard")
+    
+    # Ensure required directories exist
+    for path in PATHS.values():
+        ensure_directory(path)
+    
+    if args.mode == 'dashboard':
+        logger.info(f"Starting dashboard on port {args.port}")
+        run_dashboard(debug=args.debug, port=args.port)
 
 if __name__ == '__main__':
     main() 
